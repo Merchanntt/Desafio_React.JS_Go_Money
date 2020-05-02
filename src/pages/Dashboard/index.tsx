@@ -12,6 +12,31 @@ import formatValue from '../../utils/formatValue';
 
 import { Container, CardContainer, Card, TableContainer } from './styles';
 
+interface ResponseTransaction {
+  id: string;
+  title: string;
+  value: number;
+  type: 'income' | 'outcome';
+  category_id: string;
+  created_at: Date;
+  updated_at: Date;
+  category: {
+    id: string | null;
+    title: string | null;
+    created_at: Date | null;
+    updated_at: Date | null;
+  };
+}
+
+interface ResponseBalance {
+  transactions: ResponseTransaction[];
+  balance: {
+    income: string;
+    outcome: string;
+    total: string;
+  };
+}
+
 interface Transaction {
   id: string;
   title: string;
@@ -30,17 +55,61 @@ interface Balance {
 }
 
 const Dashboard: React.FC = () => {
-  // const [transactions, setTransactions] = useState<Transaction[]>([]);
-  // const [balance, setBalance] = useState<Balance>({} as Balance);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [balance, setBalance] = useState<Balance>({} as Balance);
 
   useEffect(() => {
     async function loadTransactions(): Promise<void> {
-      // TODO
+      const response = await api.get<ResponseBalance>('/transactions');
+
+      console.log(response);
+      if (!response) return;
+
+      const respoTransaction = response.data.transactions;
+      const respoBalance: Balance = {
+        income,
+        // income: formatValue(Number(response.data.balance.income)),
+        outcome,
+        // outcome: formatValue(Number(response.data.balance.outcome)),
+        total,
+        // total: formatValue(Number(response.data.balance.total)),
+      };
+      setBalance(respoBalance);
+
+      const newTransaction: Transaction[] = [];
+
+      respoTransaction.map(trans => {
+        const valueFormmated =
+          (trans.type === 'income' ? '' : '- ') +
+          formatValue(Number(trans.value));
+
+        const DataFormmated = new Intl.DateTimeFormat('pt-BR').format(
+          new Date(trans.created_at),
+        );
+
+        const categ = trans.category
+          ? `${trans.category.title}`
+          : 'Sem Categoria';
+
+        newTransaction.push({
+          id: trans.id,
+          title: trans.title,
+          value: trans.value,
+          formattedValue: valueFormmated,
+          formattedDate: DataFormmated,
+          type: trans.type,
+          created_at: trans.created_at,
+          category: {
+            title: categ,
+          },
+        });
+        return newTransaction;
+      });
+      setTransactions(newTransaction);
     }
 
     loadTransactions();
   }, []);
-
   return (
     <>
       <Header />
@@ -51,21 +120,21 @@ const Dashboard: React.FC = () => {
               <p>Entradas</p>
               <img src={income} alt="Income" />
             </header>
-            <h1 data-testid="balance-income">R$ 5.000,00</h1>
+            <h1 data-testid="balance-income">{balance.income}</h1>
           </Card>
           <Card>
             <header>
               <p>Saídas</p>
               <img src={outcome} alt="Outcome" />
             </header>
-            <h1 data-testid="balance-outcome">R$ 1.000,00</h1>
+            <h1 data-testid="balance-outcome">{balance.outcome}</h1>
           </Card>
           <Card total>
             <header>
               <p>Total</p>
               <img src={total} alt="Total" />
             </header>
-            <h1 data-testid="balance-total">R$ 4000,00</h1>
+            <h1 data-testid="balance-total">{balance.total}</h1>
           </Card>
         </CardContainer>
 
@@ -81,18 +150,16 @@ const Dashboard: React.FC = () => {
             </thead>
 
             <tbody>
-              <tr>
-                <td className="title">Computer</td>
-                <td className="income">R$ 5.000,00</td>
-                <td>Sell</td>
-                <td>20/04/2020</td>
-              </tr>
-              <tr>
-                <td className="title">Website Hosting</td>
-                <td className="outcome">- R$ 1.000,00</td>
-                <td>Hosting</td>
-                <td>19/04/2020</td>
-              </tr>
+              {transactions.map(transaction => (
+                <tr key={transaction.id}>
+                  <td className="title">{transaction.title}</td>
+                  <td className={transaction.type}>
+                    {transaction.formattedValue}
+                  </td>
+                  <td>{transaction.category}</td>
+                  <td>{transaction.formattedDate}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </TableContainer>
