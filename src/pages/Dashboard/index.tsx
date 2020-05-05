@@ -67,12 +67,9 @@ const Dashboard: React.FC = () => {
 
       const respoTransaction = response.data.transactions;
       const respoBalance: Balance = {
-        income,
-        // income: formatValue(Number(response.data.balance.income)),
-        outcome,
-        // outcome: formatValue(Number(response.data.balance.outcome)),
-        total,
-        // total: formatValue(Number(response.data.balance.total)),
+        income: formatValue(Number(response.data.balance.income)),
+        outcome: formatValue(Number(response.data.balance.outcome)),
+        total: formatValue(Number(response.data.balance.total)),
       };
       setBalance(respoBalance);
 
@@ -156,7 +153,7 @@ const Dashboard: React.FC = () => {
                   <td className={transaction.type}>
                     {transaction.formattedValue}
                   </td>
-                  <td>{transaction.category}</td>
+                  <td>{transaction.category.title}</td>
                   <td>{transaction.formattedDate}</td>
                 </tr>
               ))}
